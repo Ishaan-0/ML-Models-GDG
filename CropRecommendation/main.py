@@ -5,21 +5,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Load dataset
-df = pd.read_csv("Crop_recommendation.csv")  # Update with actual dataset path
+df = pd.read_csv("/Users/ishaan/Documents/GDG_Hack2Skill/ML-Models-GDG/CropRecommendation/Crop_recommendation.csv")  # Update with actual dataset path
 
 # Encode categorical labels
 label_encoder = LabelEncoder()
-df['Crop'] = label_encoder.fit_transform(df['Crop'])
+df['label'] = label_encoder.fit_transform(df['label'])
 
 # Feature selection
-X = df.drop(columns=['Crop'])  # Features
-y = df['Crop']  # Target variable
+X = df.drop(columns=['label'])  # Features
+y = df['label']  # Target variable
 
 # Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Train model
-best_model = LogisticRegression(C = 10)  
+best_model = LogisticRegression(C = 10, max_iter = 1000)  
 best_model.fit(X_train, y_train)
 
 # Save model and encoder
@@ -33,7 +33,7 @@ def recommend_crop(input_data):
     prediction = model.predict(input_df)[0]
     return encoder.inverse_transform([prediction])[0]
 
-def input():
+def get_input():
     N = float(input("Enter Nitrogen content: "))
     P = float(input("Enter Phosphorous content: "))
     K = float(input("Enter Potassium content: "))
@@ -52,6 +52,6 @@ def input():
     }
     return input_data
 
-input_date = input()
+input_data = get_input()
 prediction = recommend_crop(input_data)
 print(f"Recommended crop: {prediction}")
