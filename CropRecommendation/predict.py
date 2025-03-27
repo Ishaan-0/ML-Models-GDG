@@ -1,45 +1,34 @@
-import pickle
-from flask import Flask, request, jsonify
+from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
 import pandas as pd
 
-app = Flask(__name__)
+app = FastAPI()
 
-# Load the model using joblib
-with open('crop_recommendation_model.pkl', 'rb') as f:
-    model = pickle.load(f)
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.get_json()
-        print(f"data: {data}")
-        # Extract input values from the JSON data
-        N = data['N']
-        P = data['P']
-        K = data['K']
-        humidity = data['humidity']
-        rainfall = data['rainfall']
-        ph = data['ph']
+class Item(BaseModel):
+    N: float
+    P: float
+    K: float
+    temperature: float
+    humidity: float
+    ph: float
+    rainfall: float
+# Load the trained model and encoder
+model = joblib.load("crop_recommendation_model.pkl")
+encoder = joblib.load("label_encoder.pkl")
 
-        # Create a DataFrame from the extracted values
-        input_data = pd.DataFrame({
-            'N': [N],
-            'P': [P],
-            'K': [K],
-            'humidity': [humidity],
-            'rainfall': [rainfall],
-            'ph': [ph]
-        })
-
-        # Make the prediction
-        prediction = model.predict(input_data).tolist()
-
-        return jsonify({'prediction': prediction})
-
-    except KeyError as e:
-        return jsonify({'error': f"Missing key in JSON: {e}"}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+@app.post("/predict/")
+def predict_crop(features: Item):
+    N = Item.N
+    P = Item.P
+    K = Item.K 
+    temperature = Item.temperature
+    humidity = Item.humidity
+    ph = Item.ph
+    rainfall = Item.rainfall
+    input_data = [N, P, K, temperature, humidity, ph, rainfall]
+    input_df = pd.DataFrame([input_data])
+    prediction = model.predict(input_df)[0]
+    predicted_crop = encoder.inverse_transform([prediction])[0]
+    return {"recommended_crop": predicted_crop}
