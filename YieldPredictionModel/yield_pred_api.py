@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import joblib
 import pandas as pd
+from model import yield_prediction, encoders_mapping
 
 app = FastAPI()
 
@@ -11,13 +11,15 @@ class InputData(BaseModel):
     Area: float
     Production: float
 
-@app.post("/predict/")
+@app.post("/yield_predict/")
 def predict(data: InputData):
-    from model import get_input, prediction
-    input_dataframe = get_input(data)
-    prediction = prediction(input_dataframe)
+    dist_name, crop_name = encoders_mapping(data.Dist_Name.title(), data.Crop.upper())
+    input_data = pd.DataFrame([{
+        'Dist Name': dist_name,
+        'Crop': crop_name,
+        'Area': data.Area,
+        'Production': data.Production
+    }])
+    prediction = yield_prediction(input_data)
     return {"predicted_yield": prediction}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
